@@ -2,7 +2,7 @@
 Modifyfield package
 -----------------------
 
-This package provides methods for the function ``modifyField!``, which is intended
+This Julia package provides methods for the function ``modifyField!``, which is intended
 to modify a field of an immutable object that sits inside of a container.  To illustrate
 the issue, consider the following immutable structure::
 
@@ -69,9 +69,9 @@ The instance of ``modifyField!`` described in the example
 would be straightforward to write; here is how it would look::
 
    #  helper routine to compute the modified Immut from a given Immut x
-   copyandmodify(x::Immut, Type{Val{:isadded}}, newval) = Immut(x.intfld, newval)
+   copyandmodify(x::Immut, ::Type{Val{:isadded}}, newval) = Immut(x.intfld, newval)
 
-   function modifyField!(a::Array{Immut,1}, k::Int, Type{Val{:isadded}}, newval)
+   function modifyField!(a::Array{Immut,1}, k::Int, ::Type{Val{:isadded}}, newval)
       a[k] = copyandmodify(a[k], Val{:isadded}, newval)
       nothing
    end
