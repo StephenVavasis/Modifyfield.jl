@@ -3,7 +3,8 @@ Modifyfield package
 -----------------------
 
 This Julia package provides methods for the macros
- ``@modify_field!`` and ``@modify_tuple_entry!``.  Macro  ``@modify_field!`` 
+ ``@modify_field!`` and ``@modify_tuple_entry!``.  
+Macro ``@modify_field!`` 
 is intended
 to modify a field of an object of an immutable composite type
 that sits inside of a container.  To illustrate
@@ -86,7 +87,7 @@ works for immutable objects bound to a plain Julia variable::
   julia> @modify_field! y.intfld = 9
   Immut(9,false)
 
-However, for composite types that do not occur inside of larger containers, it is
+However, for composite types that do not occur inside of larger containers, it 
 usually achieves higher performance and is also better style
 to declare these as ``type`` rather than ``immutable`` especially if 
 one is frequently modifying fields.  
@@ -111,7 +112,7 @@ is an example of its execution::
 There is also an equivalent functional call in case the programmer prefers functions
 to macros::
    
-    julia> using Modifyfield.@modify_tuple_entry!
+    julia> using Modifyfield.copy_and_modify_tup
 
     julia> t = (5,9.5,true)
     (5,9.5,true)

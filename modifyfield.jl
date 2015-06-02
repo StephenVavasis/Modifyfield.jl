@@ -37,8 +37,8 @@ end
 
 export copy_and_modify
 export copy_and_modify_tup
-export modify_field!
-export modify_tuple_entry!
+export @modify_field!
+export @modify_tuple_entry!
 
 
 end
