@@ -2,8 +2,11 @@
 Modifyfield package
 -----------------------
 
-This Julia package provides methods for the function ``modifyField!``, which is intended
-to modify a field of an immutable object that sits inside of a container.  To illustrate
+This Julia package provides methods for the macros
+ ``@modify_field!`` and ``@modify_tuple_entry!``.  Macro  ``@modify_field!`` 
+is intended
+to modify a field of an object of an immutable composite type
+that sits inside of a container.  To illustrate
 the issue, consider the following immutable structure::
 
    immutable Immut
@@ -14,6 +17,7 @@ the issue, consider the following immutable structure::
 Suppose ``a`` is an array of type ``Immut`` and we wish to perform the following
 loop::
 
+   # LOOP 1
    t = 0
    for k = 1 : n
        t += a[k].intfld
@@ -21,98 +25,112 @@ loop::
    end
 
 Unfortunately, the above code snippet is illegal because it modifies a field of an
-immutable object.  Instead, we could obtain the same effect legally via::
+immutable object.  [Aside: If ``Immut`` had been declared as a plain composite type
+with a ``type`` declaration rather than immutable, then the above code ``LOOP 1`` would
+be fine.  However, Julia programmers often prefer to put immutable composite types
+into containers rather than plain composite types because the former are packed
+densely in memory, whereas the latter are accessed via pointers and can be
+scattered in memory, yielding poorer performance.]  
+Instead, we could obtain the same effect legally via::
 
+   # LOOP 2 
    t = 0
    for k = 1 : n
        t += a[k].intfld
        a[k] = Immut(a[k].intfld, true)
    end
 
-The problem with this code is that it becomes unwieldy for a structure with
-many fields.  In this case, it would be hard to read and also a possible source of bugs.
+The problem with this code is that it becomes unwieldy for a composite type with
+many fields.  In this case, it would be hard to read and also a possible source of bugs
+if the arguments were out of order.
 
-----------------------
-Invoking modifyField!
-----------------------
+To use the macro in the
+above example, first include the declaration ``using Modifyfield`` and then write::
 
-The purpose of this package is to provide a function ``modifyField!`` for
-use in the above context as follows::
-
+   # LOOP 3
    t = 0
    for k = 1 : n
        t += a[k].intfld
-       modifyField!(a, k, Val{:isadded}, true)
+       @modify_field! a[k].isadded = true
    end
 
-The arguments to ``modifyField!`` are as follows.  The first argument is the
-name of the container.  The second is the subscript.  In the case of an array
-or other container with *k* subscripts, arguments 2 through (*k* + 1) are the subscripts.
+Thus, the ``@modify_field!`` macro allows for code that mimics the clean syntax of 
+``LOOP 1`` above, while
+"under the hood"  providing an implementation equivalent to ``LOOP 2`` above.
 
-The third argument specifies the field to be modified.  A natural way to specify
-this argument might be ``:isadded``, the Julia syntax for specifying a symbol.  Instead,
-the package uses the more elaborate specification ``Val{:isadded}`` because this
-allows the compiler to choose at compile time
-which ``modifyField!`` variant should be invoked.  This is because the type of ``Val{:isadded}`` (namely,
-``Type{Val{:isadded}}``) is uniquely determined by
-the symbol ``:isadded``, and Julia dispatches different methods based
-on argument type.   (Refer to the Julia manual for information about ``Type`` and
-``Val``.)   In contrast, if the third argument were simply ``:isadded`` 
-then ``modifyField!`` would need to compute the correct dispatch at
-run-time because objects like ``:isadded`` and ``:intfld`` are the
-same type (``Symbol``).
+The original
+version of this code was by S. Vavasis and used metaprogramming and the
+``Val`` and ``Type`` types of Julia for dispatching to the
+correct routine.  It was greatly improved by Simon Byrne
+with the incorporation of macros and generated functions.
 
-Finally, the fourth argument is the new value that should be assigned to the particular
-field of the particular entry of the container indexed by the given subscript(s).
+If the user prefers
+to invoke a function rather than a macro, he/she can use the following statement
+for the same effect::
 
-The instance of ``modifyField!`` described in the example
-would be straightforward to write; here is how it would look::
-
-   #  helper routine to compute the modified Immut from a given Immut x
-   copyandmodify(x::Immut, ::Type{Val{:isadded}}, newval) = Immut(x.intfld, newval)
-
-   function modifyField!(a::Array{Immut,1}, k::Int, ::Type{Val{:isadded}}, newval)
-      a[k] = copyandmodify(a[k], Val{:isadded}, newval)
-      nothing
+   # LOOP 4
+   t = 0
+   for k = 1 : n
+       t += a[k].intfld
+       a[k] = copy_and_modify(a[k], Val{:isadded}, true)
    end
 
-This package writes these functions automatically: it generates functions
-of this format called ``copyandmodify`` and ``modifyField`` for any composite type that
-is provided.
+Note that although the package is intended for immutable objects in a container, it also
+works for immutable objects bound to a plain Julia variable::
 
-----------------------------------------------------
-Creating modifyField! functions for a composite type
-----------------------------------------------------
+  julia> using Modifyfield.@modify_field!
 
-The usage of the package is as follows.  Include the declaration
-``using Modifyfield``.  Next, declare any immutable types for which
-``modifyField!`` routines are desired.  For example, suppose that the 
-``Immut`` is in the code as in the above
-snippet. Then, at the outer level of the source code
-(i.e., not inside any function), include the following statements::
+  julia> y = Immut(6,false)
+  Immut(6,false)
 
-    makecopyandmodify(Immut)
-    makemodifyfield(Immut, Array{Immut,1}, 1)
+  julia> @modify_field! y.intfld = 9
+  Immut(9,false)
 
-These statements must come after the ``using`` declaration and also after
-the definition of ``Immut``.  
+However, for composite types that do not occur inside of larger containers, it is
+usually achieves higher performance and is also better style
+to declare these as ``type`` rather than ``immutable`` especially if 
+one is frequently modifying fields.  
 
-The first statement creates all the ``copyandmodify`` methods for the type
-(one per field).
-The second statement creates the ``modifyField!`` methods for the type for
-a particular container (in this case, a 1-dimensional array).  
-Include multiple ``makemodifyfield`` calls if  ``Immut`` occurs in other
-types of containers (2D arrays, dictionaries, etc).  The other two arguments
-to ``makemodifyfield`` are the base type (first argument) and number of subscripts
-needed by the container (third argument).  In principle, these other two arguments
-are redundant, i.e., it should be possible for ``makemodifyfield`` to deduce the
-base type and number of subscripts from the container type, but I couldn't figure
-out how to extract this information in a general way when I wrote the package.
 
-These functions ``makecopyandmodify`` and ``makemodifyfield`` are
-executed when the module loads; the functions they create (``copyandmodify`` and
-``modifyField``) are then available
-for use by other routines.
+-----------------------
+Modifying tuple entries
+-----------------------
+
+
+Similarly, the package provides a macro for modifying tuple entries.  Here
+is an example of its execution::
+
+    julia> using Modifyfield.@modify_tuple_entry!
+
+    julia> t = (5,9.5,true)
+    (5,9.5,true)
+
+    julia> @modify_tuple_entry! t[2] = false
+    (5,false,true)
+
+There is also an equivalent functional call in case the programmer prefers functions
+to macros::
+   
+    julia> using Modifyfield.@modify_tuple_entry!
+
+    julia> t = (5,9.5,true)
+    (5,9.5,true)
+
+    julia> t = copy_and_modify_tup(t, Val{2}, true)
+    (5,true,true)
+
+As in the case of immutables, the implementation of ``@modify_tuple_entry!`` actually
+copies the entire tuple over.
+
+A couple of cautionary notes are in order.  First, both the macro ``@modify_tuple_entry!``
+and the function-call ``copy_and_modify_tup``
+require the subscript (which is 2 in the above
+example) to be a literal integer; a variable or more general expression may not
+be used.  Second, the main purpose of this macro is again for tuples that are
+packed inside of some other container in a high-performance setting.  If one is
+modifying bare tuples such as ``t`` in the above example, then in most cases
+a cell array (``Array{Any,1}``) would be preferable to a tuple.
+
 
 
 
