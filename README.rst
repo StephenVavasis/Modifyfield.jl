@@ -2,8 +2,8 @@
 Modifyfield package
 -----------------------
 
-This Julia package provides methods for the macros
- ``@modify_field!`` and ``@modify_tuple_entry!``.  
+This Julia package provides macros
+``@modify_field!`` and ``@modify_tuple_entry!``.  
 Macro ``@modify_field!`` 
 is intended
 to modify a field of an object of an immutable composite type

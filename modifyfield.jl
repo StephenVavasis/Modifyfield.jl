@@ -1,6 +1,6 @@
 module Modifyfield
 
-copyandmodify() = nothing
+
 
 @generated function copy_and_modify{fieldname}(x, ::Type{Val{fieldname}}, v)
     F = fieldnames(x)
