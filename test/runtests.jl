@@ -20,7 +20,6 @@ function testmodifyfield()
     end
     for i = 1 : n
         @modify_field! a[i].intfld = i - 1
-        a[i] = copy_and_modify(a[i], Val{:intfld}, i - 1)
     end
     for i = 1 : n
         @assert a[i].intfld == i - 1 && a[i].boolfld == false
@@ -35,23 +34,35 @@ function testmodifyfield()
             @assert b[i,j].intfld == j && b[i,j].boolfld == false
         end
     end
+    nothing
 end
 
 function testmodifytuple()
     t = (5.5, 6.6, 7.7)
-    Modifyfield.@modify_tuple_entry! t[2] = true
+    @modify_tuple_entry! t[2] = true
     @assert t == (5.5, true, 7.7)
-    Modifyfield.@modify_tuple_entry! t[3] = "a"
+    @modify_tuple_entry! t[3] = "a"
     @assert t == (5.5, true, "a")
-    Modifyfield.@modify_tuple_entry! t[1] = Int
+    @modify_tuple_entry! t[1] = Int
     @assert t == (Int, true, "a")
+    n = 10
+    a = (Array{Tuple{Int,Int},1})[]
+    for j = 1 : n
+        a[j] = (j,j)
+    end
+    for j = 1 : n
+        @modify_tuple_entry! a[j][2] = j*j
+    end
+    for j = 1 : n
+        @assert a[j][1] == j && a[j][2] == j*j
+    end
+    nothing
 end
 
-
-println("testing...")
+println("starting tests...")
 testmodifyfield()
 testmodifytuple()
-println("done testing")
+println("tests finished")
 
 end
 
