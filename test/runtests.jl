@@ -46,7 +46,7 @@ function testmodifytuple()
     @modify_tuple_entry! t[1] = Int
     @assert t == (Int, true, "a")
     n = 10
-    a = (Array{Tuple{Int,Int},1})[]
+    a = (Tuple{Int,Int})[]
     for j = 1 : n
         a[j] = (j,j)
     end
