@@ -47,6 +47,7 @@ function testmodifytuple()
     @assert t == (Int, true, "a")
     n = 10
     a = (Tuple{Int,Int})[]
+    resize!(a,n)
     for j = 1 : n
         a[j] = (j,j)
     end
