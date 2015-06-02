@@ -35,10 +35,10 @@ macro modify_tuple_entry!(ex)
 end
 
 
-export copy_and_modify
-export copy_and_modify_tup
-export @modify_field!
-export @modify_tuple_entry!
+export copy_and_modify,
+  copy_and_modify_tup,
+  @modify_field!,
+  @modify_tuple_entry!
 
 
 end
