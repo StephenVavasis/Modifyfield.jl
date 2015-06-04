@@ -1,6 +1,8 @@
 module Test_Modifyfield
 
 using Modifyfield
+using Modifyfield.@modify_field!
+using Modifyfield.@modify_tuple_entry!
 
 immutable TestT
     intfld::Int
@@ -60,9 +62,29 @@ function testmodifytuple()
     nothing
 end
 
+function testmodifytuple2()
+    t = (0,1,2)
+    for i = 1 : 3
+        # The macro call
+        # @modify_tuple_entry! t[i] = i
+        # fails (variable subscript).
+        #
+        # The function-call variant in
+        # the next statement is dispatched at
+        # run time instead of compile time because
+        # the type of Val{i} is unknown at
+        # compile time.  This leads to poorer
+        # performance.
+        t = copy_and_modify_tup(t, Val{i}, i)  
+    end
+    @assert t == (1,2,3)
+    nothing
+end
+
 println("starting tests...")
 testmodifyfield()
 testmodifytuple()
+testmodifytuple2()
 println("tests finished")
 
 end
