@@ -1,8 +1,9 @@
-module Test_Modifyfield
-
+using Base.test.@test
 using Modifyfield
 using Modifyfield.@modify_field!
+using Modifyfield.@modify_fields!
 using Modifyfield.@modify_tuple_entry!
+using Modifyfield.copy_and_modify_tup
 
 immutable TestT
     intfld::Int
@@ -24,7 +25,7 @@ function testmodifyfield()
         @modify_field! a[i].intfld = i - 1
     end
     for i = 1 : n
-        @assert a[i].intfld == i - 1 && a[i].boolfld == false
+        @test a[i].intfld == i - 1 && a[i].boolfld == false
     end
     for i = 1 : n
         for j = 1 : n
@@ -33,7 +34,7 @@ function testmodifyfield()
     end
     for i = 1 : n
         for j = 1 : n
-            @assert b[i,j].intfld == j && b[i,j].boolfld == false
+            @test b[i,j].intfld == j && b[i,j].boolfld == false
         end
     end
     nothing
@@ -42,11 +43,11 @@ end
 function testmodifytuple()
     t = (5.5, 6.6, 7.7)
     @modify_tuple_entry! t[2] = true
-    @assert t == (5.5, true, 7.7)
+    @test t == (5.5, true, 7.7)
     @modify_tuple_entry! t[3] = "a"
-    @assert t == (5.5, true, "a")
+    @test t == (5.5, true, "a")
     @modify_tuple_entry! t[1] = Int
-    @assert t == (Int, true, "a")
+    @test t == (Int, true, "a")
     n = 10
     a = (Tuple{Int,Int})[]
     resize!(a,n)
@@ -57,7 +58,7 @@ function testmodifytuple()
         @modify_tuple_entry! a[j][2] = j*j
     end
     for j = 1 : n
-        @assert a[j][1] == j && a[j][2] == j*j
+        @test a[j][1] == j && a[j][2] == j*j
     end
     nothing
 end
@@ -77,17 +78,38 @@ function testmodifytuple2()
         # performance.
         t = copy_and_modify_tup(t, Val{i}, i)  
     end
-    @assert t == (1,2,3)
+    @test t == (1,2,3)
     nothing
 end
+
+immutable TestT2
+    a::Int
+    b::Bool
+    c::Float64
+end
+
+function testmodifyfields()
+    v = TestT2[]
+    push!(v, TestT2(4,false,65.2))
+    push!(v, TestT2(3,true, 94.2))
+    z = 64.5
+    @modify_fields! v[1].(a=9,c=z+.5)
+    @modify_fields! v[2].(c=z-0.5, b=false)
+    @test v[1] == TestT2(9, false, 65.0)
+    @test v[2] == TestT2(3, false, 64.0)
+    @modify_fields! v[2].(a=-2,)
+    @test v[2] == TestT2(-2, false, 64.0)
+    nothing
+end
+    
 
 println("starting tests...")
 testmodifyfield()
 testmodifytuple()
 testmodifytuple2()
+testmodifyfields()
 println("tests finished")
 
-end
 
 
 

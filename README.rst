@@ -3,7 +3,7 @@ Modifyfield package
 -----------------------
 
 This Julia package provides macros
-``@modify_field!`` and ``@modify_tuple_entry!``.  
+``@modify_field!``, ``@modify_fields!``  and ``@modify_tuple_entry!``.  
 Macro ``@modify_field!`` 
 is intended
 to modify a field of an object of an immutable composite type
@@ -94,6 +94,38 @@ by declaring objects such as this as
 a ``type`` rather than ``immutable`` especially if 
 one is frequently modifying fields.  (A ``type`` rather than ``immutable``
 is also stylistically preferred in this context.)
+
+-------------------------
+Modifying multiple fields
+-------------------------
+
+A macro is also provided for modifying multiple fields at the
+same time.  (This is more efficient than modifying one at a time.)
+Here is an example of its usage::
+
+   immutable Immut2
+       intfld::Int
+       isadded::Bool
+       xx::Float64
+   end
+
+If ``a`` is an array of ``Immut2`` entries, then the following
+loop changes the first two fields of each entry::
+
+   for k = 1 : n
+       @modify_fields! a[k].(intfld = k+1, isadded = true)
+   end
+
+This slightly odd syntax was chosen
+so that field names are close to their corresponding new values
+to improve readability.
+
+The parenthesized argument in the ``@modify_fields!`` macro can
+name a single field, but in this case it should be followed by
+a comma (so that its syntax matches the Julia tuple syntax)::
+     @modify_fields! w.(intfld = 6,)
+which is equivalent to::
+     @modify_field! w.intfld = 6
 
 
 -----------------------
