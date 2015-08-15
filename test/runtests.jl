@@ -1,4 +1,4 @@
-using Base.test.@test
+using Base.Test.@test
 using Modifyfield
 using Modifyfield.@modify_field!
 using Modifyfield.@modify_fields!
