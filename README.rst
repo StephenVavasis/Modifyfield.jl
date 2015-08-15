@@ -124,6 +124,7 @@ The parenthesized argument in the ``@modify_fields!`` macro can
 name a single field, but in this case it should be followed by
 a comma (so that its syntax matches the Julia tuple syntax)::
      @modify_fields! w.(intfld = 6,)
+
 which is equivalent to::
      @modify_field! w.intfld = 6
 
